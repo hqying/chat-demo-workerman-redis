@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hello world</title>
+    <style>
+        body>div{
+            border-bottom: 1px solid black;
+            padding: 20px;
+        }
+    </style>
+    <script src="/static/jquery-2.1.1.min.js"></script>
+</head>
+<body>
+    <h1>Hello world, DB</h1>
+    <div id="container5">
+        <p>login status</p>
+        <div id="login-status" style="height: 40px;">
+            <div id="not-signed-in">
+                <label for="uid">uid:</label>
+                <input name="uid" id="uid">
+                <button id="login-btn">login</button>
+            </div>
+            <div id="signed-in" style="display:none;">
+                <p style="display: inline;">logged in as uid <span id="logged-in-uid"></span></p>
+                <button id="logout-btn">logout</button>
+            </div>
+        </div>
+
+        <p>send and receive messages</p>
+        <div id="received-msg" style="width: 500px; height: 200px;background: rgba(200,200,200,0.2);margin:10px;" >
+
+        </div>
+
+        <div>
+            <label for="sendto">send to:</label>
+            <input name="sendto" id="sendto">
+            <label for="msg">type in a message:</label>
+            <input name="msg" id="msg">
+            <button id="send-btn">send</button>
+        </div>
+    </div>
+    <br>
+    <br>
+    <div id="container3">
+        <p>insert into db</p>
+        <form action="/index/index/insertIntoStudent" method="get">
+            <label for="name">name:</label>
+            <input name="name" id="name">
+            <label for="city">city:</label>
+            <input name="city" id="city">
+            <label for="country">country:</label>
+            <input name="country" id="country">
+            <input type="submit" value="submit">
+        </form>
+    </div>
+    <br>
+    <div id="container4">
+        <p>filter ajax</p>
+        <label for="countryselect">country</label>
+        <select id="countryselect">
+            {foreach countries as $country}
+                <option value="{$country['country']}">{$country['country']}</option>
+            {/foreach}
+        </select>
+        <div id="filter-result">
+
+        </div>
+    </div>
+    <br>
+    <div id="container1">
+        <p>js</p>
+    </div>
+    <br>
+    <div id="container2">
+        <p>php</p>
+        {foreach dataphp as $item}
+            <p>{$item['id']} {$item['name']} {$item['city']} {$item['country']}</p>
+        {/foreach}
+    </div>
+
+</body>
+</html>
+<script>
+//    var container1 = $('#container1');
+//    var j = {$data};
+//
+//    for (var i =0; i< j.length; i++) {
+//        container1.append('\<p>'+j[i]['id']+' '+j[i]['name']+' '+j[i]['city']+ ' '+j[i]['country']+'\</p>');
+//    }
+//
+//    $('#countryselect').change(function() {
+//        var selectedCountry = $('option:selected').val();
+//        $.ajax({
+//            url: '/index/index/selectByCountry?country=' + selectedCountry,
+//            success: function (res) {
+//                var filterResultContainer = $('#filter-result');
+//                filterResultContainer.html('');
+//                for (var i = 0; i < res.length; i++) {
+//                    filterResultContainer.append('\<p>'+res[i]['id']+' '+res[i]['name']+' '+res[i]['city']+ ' '+res[i]['country']+'\</p>')
+//                }
+//            }
+//        });
+//    })
+
+</script>
+<script>
+    ws = new WebSocket('ws://127.0.0.1:2346');
+
+    ws.onopen = function(event) {
+        console.log('connected');
+    };
+
+    var uid = -1;
+
+    $('#login-btn').click(function() {
+        uid = parseInt($('#uid').val());
+        ws.send(JSON.stringify({'type': 'login', 'uid': uid}));
+        $('#logged-in-uid').text(uid);
+        $('#not-signed-in').css('display', 'none');
+        $('#signed-in').css('display', 'block');
+    });
+
+    $('#logout-btn').click(function() {
+        ws.send(JSON.stringify({'type': 'logout', 'uid': uid}));
+        uid = -1;
+        $('#received-msg').html('');
+        $('#signed-in').css('display', 'none');
+        $('#not-signed-in').css('display', 'block');
+    });
+
+
+    ws.onmessage = function(p1) {
+        $('#received-msg').append('<p>'+p1.data+'</p>');
+//        console.log('received: ' + p1.data);
+    };
+
+    $('#send-btn').click(function() {
+        var msgtext = $('#msg').val();
+        var sendto = $('#sendto').val();
+        var msg = JSON.stringify({'type': 'say', 'uid': uid, 'sendtouid': sendto, 'msgtext': msgtext});
+
+        ws.send(msg);
+        console.log('sent to '+ sendto +': ' + msgtext);
+        $('#msg').val('');
+    })
+
+</script>
